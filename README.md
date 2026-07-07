@@ -17,6 +17,7 @@ A Windows desktop app for presenting Bible verses on a projector or second displ
 ## Roadmap
 
 - **English Bible support** — planned for the next major release (currently Indonesian TB only)
+- **Other operating systems** — macOS and Linux support planned for the next major release (currently Windows only)
 
 ## Requirements
 
