@@ -71,4 +71,20 @@ describe('lookupReference', () => {
 
     await expect(lookupReference('tb', 'TB', 'Yohanes 3:16')).resolves.toBeNull()
   })
+
+  it('accepts references with irregular whitespace', async () => {
+    getChapterVerses.mockResolvedValue([
+      {
+        book: 'JHN',
+        bookName: 'Yohanes',
+        chapter: 3,
+        verse: 16,
+        text: 'Karena begitu besar kasih Allah akan dunia ini'
+      }
+    ])
+
+    await lookupReference('tb', 'TB', '  Yohanes   3 : 16  ')
+
+    expect(getChapterVerses).toHaveBeenCalledWith('tb', 'JHN', 3, 16, 16)
+  })
 })

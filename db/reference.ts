@@ -9,16 +9,31 @@ import { getChapterVerses } from './verse-service'
 const REFERENCE_REGEX =
   /^(\d?\s?[a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?$/i
 
+export function normalizeReference(input: string): string {
+  let normalized = input
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\s*([:\-–])\s*/g, '$1')
+
+  // Allow glued chapter numbers, e.g. "Yohanes3:16" or "1 Yohanes3:16"
+  normalized = normalized.replace(
+    /^((?:\d+\s+)?[a-zA-Z]+(?:\s+[a-zA-Z]+)?)(\d)/,
+    '$1 $2'
+  )
+
+  return normalized
+}
+
 export function parseReference(input: string): {
   bookId: string
   chapter: number
   startVerse?: number
   endVerse?: number
 } | null {
-  const trimmed = input.trim()
-  if (!trimmed) return null
+  const normalized = normalizeReference(input)
+  if (!normalized) return null
 
-  const match = trimmed.match(REFERENCE_REGEX)
+  const match = normalized.match(REFERENCE_REGEX)
   if (!match) return null
 
   const bookKey = match[1].toLowerCase().replace(/\s+/g, ' ')

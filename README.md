@@ -14,6 +14,11 @@ A Windows desktop app for presenting Bible verses on a projector or second displ
 - **Keyboard shortcuts** — `Esc` hide, arrow keys prev/next verse
 - **Theme settings** — background and text colors
 
+## Roadmap
+
+- **English Bible support** — planned for the next major release (currently Indonesian TB only)
+- **Other operating systems** — macOS and Linux support planned for the next major release (currently Windows only)
+
 ## Requirements
 
 - Windows 10/11 (target platform)

@@ -8,13 +8,17 @@ function chapterKey(translationId: string, bookId: string, chapter: number): str
   return `${translationId}:${bookId}:${chapter}`
 }
 
+function hasFullChapterCache(verses: Verse[]): boolean {
+  return verses.length > 0 && verses[0].verse === 1
+}
+
 async function loadFullChapter(
   translationId: string,
   bookId: string,
   chapter: number
 ): Promise<Verse[]> {
   const cached = getVerses(translationId, bookId, chapter)
-  if (cached.length > 0) {
+  if (hasFullChapterCache(cached)) {
     return cached
   }
 
