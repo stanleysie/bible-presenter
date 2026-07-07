@@ -56,6 +56,40 @@ describe('getChapterVerses', () => {
     expect(insertVerses).toHaveBeenCalledWith('tb', 'GEN', 1, [{ verse: 1, text: 'Pada mulanya' }])
   })
 
+  it('refetches when cache only contains a partial chapter', async () => {
+    getVerses.mockReturnValue([
+      {
+        book: 'JHN',
+        bookName: 'Yohanes',
+        chapter: 3,
+        verse: 16,
+        text: 'Karena begitu besar kasih Allah'
+      }
+    ])
+    fetchMayicuVerses.mockResolvedValue([
+      {
+        book: 'JHN',
+        bookName: 'Yohanes',
+        chapter: 3,
+        verse: 1,
+        text: 'Ada seorang dari antara Farisi'
+      },
+      {
+        book: 'JHN',
+        bookName: 'Yohanes',
+        chapter: 3,
+        verse: 16,
+        text: 'Karena begitu besar kasih Allah'
+      }
+    ])
+
+    const verses = await getChapterVerses('tb', 'JHN', 3)
+
+    expect(verses).toHaveLength(2)
+    expect(fetchMayicuVerses).toHaveBeenCalledWith('tb', 'JHN', 3)
+    expect(insertVerses).toHaveBeenCalled()
+  })
+
   it('deduplicates concurrent loads for the same chapter', async () => {
     getVerses.mockReturnValue([])
     fetchMayicuVerses.mockImplementation(

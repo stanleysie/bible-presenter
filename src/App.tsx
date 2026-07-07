@@ -33,15 +33,20 @@ export default function App(): JSX.Element {
   const [loadingVerses, setLoadingVerses] = useState(false)
   const [outputVisible, setOutputVisible] = useState(false)
   const pendingVerseRef = useRef<number | null>(1)
+  const skipNextVerseLoadRef = useRef(false)
+  const loadRequestIdRef = useRef(0)
 
   const currentTranslation = translations.find((t) => t.id === translationId)
 
   const loadVerses = useCallback(
     async (tId: string, bId: string, ch: number) => {
+      const requestId = ++loadRequestIdRef.current
       setLoadingVerses(true)
       setError(null)
       try {
         const result = await window.biblePresenter.getVerses(tId, bId, ch)
+        if (requestId !== loadRequestIdRef.current) return
+
         setVerses(result.verses)
         if (result.verses.length > 0) {
           const pending = pendingVerseRef.current
@@ -64,6 +69,8 @@ export default function App(): JSX.Element {
           setPreview(null)
         }
       } catch (err) {
+        if (requestId !== loadRequestIdRef.current) return
+
         setVerses([])
         setSelectedVerse(null)
         setPreview(null)
@@ -73,7 +80,9 @@ export default function App(): JSX.Element {
             : 'Could not load verses. Check your internet connection.'
         )
       } finally {
-        setLoadingVerses(false)
+        if (requestId === loadRequestIdRef.current) {
+          setLoadingVerses(false)
+        }
       }
     },
     []
@@ -116,6 +125,10 @@ export default function App(): JSX.Element {
   }, [translationId, bookId])
 
   useEffect(() => {
+    if (skipNextVerseLoadRef.current) {
+      skipNextVerseLoadRef.current = false
+      return
+    }
     loadVerses(translationId, bookId, chapter)
   }, [translationId, bookId, chapter, loadVerses])
 
@@ -164,10 +177,22 @@ export default function App(): JSX.Element {
         setError(`Could not find "${referenceInput}". Check the reference and try again.`)
         return
       }
+
       const first = result.verses[0]
+      const sameChapter = first.book === bookId && first.chapter === chapter
+
+      if (sameChapter && verses.some((v) => v.verse === first.verse)) {
+        applyVerse(first.verse)
+        return
+      }
+
       pendingVerseRef.current = first.verse
-      setBookId(first.book)
-      setChapter(first.chapter)
+      if (!sameChapter) {
+        skipNextVerseLoadRef.current = true
+        setBookId(first.book)
+        setChapter(first.chapter)
+      }
+      await loadVerses(translationId, first.book, first.chapter)
     } catch (err) {
       setError(
         err instanceof Error
@@ -417,6 +442,11 @@ export default function App(): JSX.Element {
         </main>
 
         <aside className="sidebar sidebar-right">
+          <div className="panel output-preview-panel">
+            <h2>Projector Preview</h2>
+            <OutputPreview theme={theme} payload={preview} active={outputVisible} />
+          </div>
+
           <div className="panel">
             <h2>Output Display</h2>
             <div className="field">
@@ -432,36 +462,6 @@ export default function App(): JSX.Element {
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
-
-          <div className="panel">
-            <h2>Appearance</h2>
-            <div className="field color-field">
-              <label htmlFor="background-color">Background</label>
-              <div className="color-input-wrap">
-                <input
-                  id="background-color"
-                  type="color"
-                  className="color-input"
-                  value={theme.backgroundColor}
-                  onChange={(e) => handleThemeChange({ backgroundColor: e.target.value })}
-                />
-                <span className="color-value">{theme.backgroundColor}</span>
-              </div>
-            </div>
-            <div className="field color-field">
-              <label htmlFor="text-color">Text color</label>
-              <div className="color-input-wrap">
-                <input
-                  id="text-color"
-                  type="color"
-                  className="color-input"
-                  value={theme.textColor}
-                  onChange={(e) => handleThemeChange({ textColor: e.target.value })}
-                />
-                <span className="color-value">{theme.textColor}</span>
-              </div>
             </div>
           </div>
 
@@ -500,9 +500,21 @@ export default function App(): JSX.Element {
             </div>
           </div>
 
-          <div className="panel output-preview-panel">
-            <h2>Projector Preview</h2>
-            <OutputPreview theme={theme} payload={preview} active={outputVisible} />
+          <div className="panel">
+            <h2>Appearance</h2>
+            <div className="field color-field">
+              <label htmlFor="text-color">Text color</label>
+              <div className="color-input-wrap">
+                <input
+                  id="text-color"
+                  type="color"
+                  className="color-input"
+                  value={theme.textColor}
+                  onChange={(e) => handleThemeChange({ textColor: e.target.value })}
+                />
+                <span className="color-value">{theme.textColor}</span>
+              </div>
+            </div>
           </div>
         </aside>
       </div>

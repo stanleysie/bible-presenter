@@ -118,6 +118,84 @@ describe('App', () => {
     expect(within(preview).getByText('Kejadian 1:2 (TB)')).toBeInTheDocument()
   })
 
+  it('loads full chapter in sidebar after quick reference search', async () => {
+    const user = userEvent.setup()
+    biblePresenter.getBooks.mockResolvedValue([
+      { id: 'GEN', translationId: 'tb', name: 'Kejadian', order: 1 },
+      { id: 'JHN', translationId: 'tb', name: 'Yohanes', order: 43 }
+    ])
+    biblePresenter.getChapters.mockImplementation(async (_tId: string, bId: string) =>
+      bId === 'JHN' ? [1, 2, 3] : [1, 2, 3]
+    )
+    biblePresenter.lookupReference.mockResolvedValue({
+      translationId: 'tb',
+      translationAbbreviation: 'TB',
+      reference: 'Yohanes 3:16',
+      verses: [
+        {
+          book: 'JHN',
+          bookName: 'Yohanes',
+          chapter: 3,
+          verse: 16,
+          text: 'Karena begitu besar kasih Allah akan dunia ini'
+        }
+      ]
+    })
+    biblePresenter.getVerses.mockImplementation(async (_tId: string, bId: string, ch: number) => {
+      if (bId === 'JHN' && ch === 3) {
+        return {
+          translationId: 'tb',
+          translationAbbreviation: 'TB',
+          reference: 'Yohanes 3',
+          verses: [1, 2, 16].map((verse) => ({
+            book: 'JHN',
+            bookName: 'Yohanes',
+            chapter: 3,
+            verse,
+            text: `Verse ${verse}`
+          }))
+        }
+      }
+
+      return {
+        translationId: 'tb',
+        translationAbbreviation: 'TB',
+        reference: 'Kejadian 1',
+        verses: [
+          {
+            book: 'GEN',
+            bookName: 'Kejadian',
+            chapter: 1,
+            verse: 1,
+            text: 'Pada mulanya Allah menciptakan langit dan bumi.'
+          },
+          {
+            book: 'GEN',
+            bookName: 'Kejadian',
+            chapter: 1,
+            verse: 2,
+            text: 'Bumi belum berbentuk dan kosong'
+          }
+        ]
+      }
+    })
+
+    render(<App />)
+    await screen.findByText('Navigate')
+
+    await user.type(screen.getByPlaceholderText('e.g. Yohanes 3:16'), 'Yohanes 3:16')
+    await user.click(screen.getByRole('button', { name: 'Find' }))
+
+    const verseList = document.querySelector('.verse-list') as HTMLElement
+    await within(verseList).findByText('Verse 16')
+    expect(verseList.querySelectorAll('.verse-item')).toHaveLength(3)
+    expect(verseList.querySelector('.verse-item.selected')).toHaveTextContent('16')
+
+    const preview = document.querySelector('.preview') as HTMLElement
+    expect(within(preview).getByText('Yohanes 3:16 (TB)')).toBeInTheDocument()
+    expect(biblePresenter.getVerses).toHaveBeenCalledWith('tb', 'JHN', 3)
+  })
+
   it('shows projector status and toggles show/hide', async () => {
     const user = userEvent.setup()
     render(<App />)
