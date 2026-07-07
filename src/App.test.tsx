@@ -8,6 +8,10 @@ vi.mock('../shared/assets/background.jpg', () => ({
   default: '/test-background.jpg'
 }))
 
+vi.mock('../shared/assets/icon.png', () => ({
+  default: '/test-icon.png'
+}))
+
 const biblePresenter = {
   getTranslations: vi.fn(),
   getSettings: vi.fn(),

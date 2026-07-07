@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AutoFitVerse } from '../shared/AutoFitVerse'
 import { OutputPreview } from '../shared/OutputPreview'
+import appIcon from '../shared/assets/icon.png'
 import { formatDisplayReference } from '../shared/format-reference'
 import { getSlideBackgroundStyle } from '../shared/slide-background'
 import type {
@@ -278,8 +279,13 @@ export default function App(): JSX.Element {
     <div className="app">
       <header className="header">
         <div className="header-brand">
-          <h1>Bible Presenter</h1>
-          <p className="header-subtitle">Terjemahan Baru</p>
+          <span className="header-icon-badge">
+            <img className="header-icon" src={appIcon} alt="" aria-hidden="true" />
+          </span>
+          <div className="header-brand-text">
+            <h1>Bible Presenter</h1>
+            <p className="header-subtitle">Terjemahan Baru</p>
+          </div>
         </div>
         <div className="header-actions">
           <span className="translation-badge" aria-label="Translation">

@@ -47,6 +47,7 @@
       "output": "release"
     },
     "win": {
+      "icon": "shared/assets/icon.png",
       "target": [
         "nsis"
       ],
