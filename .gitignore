@@ -1,0 +1,14 @@
+node_modules
+out
+release
+*.db
+.env
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db
+*.log
+coverage
+*.tsbuildinfo
+builder-debug.yml
+builder-effective-config.yaml
