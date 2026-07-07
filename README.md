@@ -54,13 +54,46 @@ npm run dev
 
 ## Build Windows installer
 
+The most reliable way to build is **GitHub Actions** on `windows-latest` (native Windows compile for `better-sqlite3`).
+
+### CI build (recommended)
+
+Push to `master`, `dev`, or run the workflow manually:
+
+1. Push this repo to GitHub
+2. Go to **Actions → Build Windows → Run workflow**, or push to `main`
+3. When the run finishes, download artifacts:
+   - `bible-presenter-windows-installer` — NSIS setup `.exe`
+   - `bible-presenter-windows-portable` — unpacked app folder
+
+To publish a release, tag a version and push:
+
 ```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+GitHub creates a release with the installer attached.
+
+### Local build (native Windows only)
+
+WSL/Linux builds produce a Windows `.exe` shell but native modules are compiled for Linux and will not run on Windows. Use native Windows instead:
+
+```powershell
+npm install
 npm run dist
 ```
 
-The installer will be in the `release/` folder.
+| Artifact | Path |
+|----------|------|
+| Installer | `release/Bible Presenter Setup 1.0.0.exe` |
+| Portable app | `release/win-unpacked/Bible Presenter.exe` (copy the whole `win-unpacked` folder) |
 
-> **Note:** Building the NSIS `.exe` installer on Linux/WSL requires [Wine](https://www.winehq.org/). On Windows, `npm run dist` works out of the box. You can also run the unpacked app from `release/win-unpacked/Bible Presenter.exe` after building.
+### If Windows blocks the app
+
+- Do not run from `Downloads` — install via the setup `.exe` or copy `win-unpacked` to e.g. `C:\Programs\BiblePresenter`
+- Check **Windows Security → Protection history** for quarantined files and restore them
+- Unblock files: `Unblock-File -Path "C:\Programs\BiblePresenter\*" -Recurse` in PowerShell
 
 ## Bible text
 
