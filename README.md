@@ -2,6 +2,16 @@
 
 A Windows desktop app for presenting Bible verses on a projector or second display — similar to EasyWorship or WorshipTools Presenter, focused only on Scripture.
 
+## Screenshots
+
+**Operator panel**
+
+![Bible Presenter operator control panel](shared/assets/bible-presenter.png)
+
+**Projector output**
+
+![Bible Presenter projector output](shared/assets/bible-presenter-preview.png)
+
 ## Features
 
 - **Dual-window presentation** — operator control panel + fullscreen output on a second monitor
@@ -12,7 +22,7 @@ A Windows desktop app for presenting Bible verses on a projector or second displ
 - **Show / Hide projector** — preview on the control panel, then show or hide output on the projector
 - **Auto-fit text** — long verses scale down to fit the screen
 - **Keyboard shortcuts** — `Esc` hide, arrow keys prev/next verse
-- **Theme settings** — background and text colors
+- **Theme settings** — text colors
 
 ## Roadmap
 
@@ -80,26 +90,6 @@ git push origin v1.0.0
 
 GitHub creates a release with the installer attached.
 
-### Local build (native Windows only)
-
-WSL/Linux builds produce a Windows `.exe` shell but native modules are compiled for Linux and will not run on Windows. Use native Windows instead:
-
-```powershell
-npm install
-npm run dist
-```
-
-| Artifact | Path |
-|----------|------|
-| Installer | `release/Bible Presenter Setup 1.0.0.exe` |
-| Portable app | `release/win-unpacked/Bible Presenter.exe` (copy the whole `win-unpacked` folder) |
-
-### If Windows blocks the app
-
-- Do not run from `Downloads` — install via the setup `.exe` or copy `win-unpacked` to e.g. `C:\Programs\BiblePresenter`
-- Check **Windows Security → Protection history** for quarantined files and restore them
-- Unblock files: `Unblock-File -Path "C:\Programs\BiblePresenter\*" -Recurse` in PowerShell
-
 ## Bible text
 
 TB (Terjemahan Baru) verse text is loaded from the [mayicu Alkitab API](https://mayicu.id/api/alkitab/v1/docs). See [LICENSING.md](LICENSING.md) for notes on use and distribution.
@@ -116,8 +106,8 @@ shared/       Types and shared UI components
 
 ## Keyboard shortcuts
 
-| Key | Action |
-|-----|--------|
+| Key   | Action                                      |
+| ----- | ------------------------------------------- |
 | Enter | Find reference (when search box is focused) |
-| Esc | Hide projector output |
-| ← / → | Previous / next verse |
+| Esc   | Hide projector output                       |
+| ← / → | Previous / next verse                       |
