@@ -36,6 +36,13 @@ export default function App(): JSX.Element {
   const skipNextVerseLoadRef = useRef(false)
   const loadRequestIdRef = useRef(0)
 
+  useEffect(() => {
+    if (!error) return
+
+    const timer = window.setTimeout(() => setError(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [error])
+
   const currentTranslation = translations.find((t) => t.id === translationId)
 
   const loadVerses = useCallback(
@@ -170,6 +177,8 @@ export default function App(): JSX.Element {
   }
 
   const handleReferenceSearch = async (): Promise<void> => {
+    if (!referenceInput.trim()) return
+
     setError(null)
     try {
       const result = await window.biblePresenter.lookupReference(translationId, referenceInput)
@@ -392,7 +401,11 @@ export default function App(): JSX.Element {
                 value={referenceInput}
                 onChange={(e) => setReferenceInput(e.target.value)}
               />
-              <button className="btn-primary" onClick={handleReferenceSearch}>
+              <button
+                className="btn-primary"
+                onClick={handleReferenceSearch}
+                disabled={!referenceInput.trim()}
+              >
                 Find
               </button>
             </div>

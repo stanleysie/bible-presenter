@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -194,6 +194,49 @@ describe('App', () => {
     const preview = document.querySelector('.preview') as HTMLElement
     expect(within(preview).getByText('Yohanes 3:16 (TB)')).toBeInTheDocument()
     expect(biblePresenter.getVerses).toHaveBeenCalledWith('tb', 'JHN', 3)
+  })
+
+  it('ignores empty quick reference search', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByText('Navigate')
+
+    const findButton = screen.getByRole('button', { name: 'Find' })
+    expect(findButton).toBeDisabled()
+
+    const input = screen.getByPlaceholderText('e.g. Yohanes 3:16')
+    await user.click(input)
+    await user.keyboard('{Enter}')
+
+    expect(biblePresenter.lookupReference).not.toHaveBeenCalled()
+    expect(document.querySelector('.error-banner')).not.toBeInTheDocument()
+  })
+
+  it('clears error banner after 5 seconds', async () => {
+    const user = userEvent.setup()
+    const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
+    biblePresenter.lookupReference.mockResolvedValue(null)
+
+    try {
+      render(<App />)
+      await screen.findByText('Navigate')
+
+      await user.type(screen.getByPlaceholderText('e.g. Yohanes 3:16'), 'xyz')
+      await user.click(screen.getByRole('button', { name: 'Find' }))
+
+      expect(await screen.findByText(/Could not find "xyz"/)).toBeInTheDocument()
+
+      const dismissCall = setTimeoutSpy.mock.calls.find(([, delay]) => delay === 5000)
+      expect(dismissCall).toBeDefined()
+
+      act(() => {
+        ;(dismissCall![0] as () => void)()
+      })
+
+      expect(document.querySelector('.error-banner')).not.toBeInTheDocument()
+    } finally {
+      setTimeoutSpy.mockRestore()
+    }
   })
 
   it('shows projector status and toggles show/hide', async () => {
