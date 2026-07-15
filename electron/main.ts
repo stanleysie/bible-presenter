@@ -23,24 +23,32 @@ import {
 import { getSettings, setOutputDisplayId, setTheme } from './settings'
 
 // WSL/Linux often lacks a working GPU stack for Chromium
-function configureGraphicsForLinux(): void {
-  if (process.platform !== 'linux') return
-
-  let isWsl = false
+function isRunningUnderWsl(): boolean {
   try {
     if (existsSync('/proc/version')) {
       const version = readFileSync('/proc/version', 'utf8').toLowerCase()
-      isWsl = version.includes('microsoft') || version.includes('wsl')
+      return version.includes('microsoft') || version.includes('wsl')
     }
   } catch {
     // ignore
   }
+  return false
+}
+
+function configureGraphicsForLinux(): void {
+  if (process.platform !== 'linux') return
+
+  const isWsl = isRunningUnderWsl()
 
   if (isWsl || process.env.FORCE_SOFTWARE_RENDER === '1') {
     app.disableHardwareAcceleration()
     app.commandLine.appendSwitch('disable-gpu')
     app.commandLine.appendSwitch('disable-gpu-sandbox')
     app.commandLine.appendSwitch('disable-dev-shm-usage')
+    // Prefer X11 over Wayland on WSLg — dual Ozone init can drop the display
+    // connection and Chromium aborts with "Failed to shutdown."
+    app.commandLine.appendSwitch('ozone-platform-hint', 'x11')
+    app.commandLine.appendSwitch('ozone-platform', 'x11')
   }
 }
 
@@ -105,6 +113,9 @@ function createOutputWindow(): void {
 
   const display = getOutputDisplay()
   const settings = getSettings()
+  // Exclusive fullscreen on WSLg can tear down the X11 connection and crash
+  // Electron with FATAL "Failed to shutdown." Use a frameless bounds-fill window.
+  const useExclusiveFullscreen = !isRunningUnderWsl()
 
   outputWindow = new BrowserWindow({
     x: display.bounds.x,
@@ -113,7 +124,7 @@ function createOutputWindow(): void {
     height: display.bounds.height,
     show: false,
     frame: false,
-    fullscreen: true,
+    fullscreen: useExclusiveFullscreen,
     backgroundColor: settings.theme.backgroundColor,
     autoHideMenuBar: true,
     webPreferences: {
@@ -125,8 +136,11 @@ function createOutputWindow(): void {
   })
 
   outputWindow.on('ready-to-show', () => {
+    outputWindow?.setBounds(display.bounds)
+    if (useExclusiveFullscreen) {
+      outputWindow?.setFullScreen(true)
+    }
     outputWindow?.show()
-    outputWindow?.setFullScreen(true)
     broadcastOutputState()
   })
 
@@ -163,7 +177,13 @@ function createControlWindow(): void {
 
   controlWindow.on('ready-to-show', () => {
     controlWindow?.show()
-    createOutputWindow()
+    // Delay the second fullscreen-ish window on WSL so Ozone can finish
+    // initializing the operator window first.
+    if (isRunningUnderWsl()) {
+      setTimeout(() => createOutputWindow(), 250)
+    } else {
+      createOutputWindow()
+    }
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
@@ -193,6 +213,9 @@ function broadcastOutputState(): void {
 }
 
 function showVerse(payload: VerseRange): void {
+  if (!outputWindow || outputWindow.isDestroyed()) {
+    createOutputWindow()
+  }
   outputState = {
     active: true,
     payload,
@@ -213,8 +236,13 @@ function clearOutput(): void {
 function repositionOutputWindow(): void {
   if (!outputWindow || outputWindow.isDestroyed()) return
   const display = getOutputDisplay()
+  if (outputWindow.isFullScreen()) {
+    outputWindow.setFullScreen(false)
+  }
   outputWindow.setBounds(display.bounds)
-  outputWindow.setFullScreen(true)
+  if (!isRunningUnderWsl()) {
+    outputWindow.setFullScreen(true)
+  }
 }
 
 function registerIpcHandlers(): void {
