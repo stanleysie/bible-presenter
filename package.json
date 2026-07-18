@@ -1,6 +1,6 @@
 {
   "name": "bible-presenter",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Bible presentation app for Windows",
   "main": "./out/main/main.js",
   "author": "",
