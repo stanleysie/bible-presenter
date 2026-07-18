@@ -38,9 +38,7 @@ describe('OutputPreview', () => {
     render(<OutputPreview theme={DEFAULT_THEME} payload={payload} active />)
 
     expect(screen.getByText('Yohanes 3:16 (TB)')).toBeInTheDocument()
-    expect(
-      screen.getByText('Karena begitu besar kasih Allah akan dunia ini')
-    ).toBeInTheDocument()
+    expect(screen.getByText('Karena begitu besar kasih Allah akan dunia ini')).toBeInTheDocument()
   })
 
   it('renders background-only when active but no payload', () => {

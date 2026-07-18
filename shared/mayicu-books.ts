@@ -1,4 +1,5 @@
 // Mayicu Alkitab API book codes (https://mayicu.id/api/alkitab/v1/docs)
+// Same Indonesian codes are accepted for TB, NKJV, and NIV.
 export const BOOK_ID_TO_MAYICU_CODE: Record<string, string> = {
   GEN: 'Kej',
   EXO: 'Kel',

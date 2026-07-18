@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchMayicuChapterVerses, fetchMayicuVerses } from './mayicu-api'
+import { fetchMayicuChapterVerses, fetchMayicuVerses, parseMayicuVerses } from './mayicu-api'
+
+function contentVerses(count: number): Array<{ number: number; text: string }> {
+  return Array.from({ length: count }, (_, index) => ({
+    number: index + 1,
+    text: ` Verse ${index + 1} `
+  }))
+}
 
 describe('mayicu api', () => {
   beforeEach(() => {
@@ -7,39 +14,62 @@ describe('mayicu api', () => {
       'fetch',
       vi.fn(async () => ({
         ok: true,
-        json: async () => [
-          { number: 16, text: ' Karena begitu besar kasih Allah akan dunia ini ' },
-          { number: 17, text: 'Ayat 17' }
-        ]
+        json: async () => contentVerses(3)
       }))
     )
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.useRealTimers()
   })
 
-  it('parses and sorts chapter verses', async () => {
-    const verses = await fetchMayicuChapterVerses('tb', 'Yoh', 3)
-
-    expect(verses).toEqual([
-      { verse: 16, text: 'Karena begitu besar kasih Allah akan dunia ini' },
-      { verse: 17, text: 'Ayat 17' }
+  it('parses and sorts chapter verses', () => {
+    expect(
+      parseMayicuVerses([
+        { number: 2, text: ' Two ' },
+        { number: 1, text: 'One' },
+        { number: 0, text: 'ignored' }
+      ])
+    ).toEqual([
+      { verse: 1, text: 'One' },
+      { verse: 2, text: 'Two' }
     ])
   })
 
-  it('maps verses to app verse objects', async () => {
-    const verses = await fetchMayicuVerses('tb', 'JHN', 3, 16, 16)
+  it('maps TB verses and builds the Mayicu path', async () => {
+    const verses = await fetchMayicuVerses('tb', 'PHM', 1, 1, 1)
 
     expect(verses).toEqual([
       {
-        book: 'JHN',
-        bookName: 'Yohanes',
-        chapter: 3,
-        verse: 16,
-        text: 'Karena begitu besar kasih Allah akan dunia ini'
+        book: 'PHM',
+        bookName: 'Filemon',
+        chapter: 1,
+        verse: 1,
+        text: 'Verse 1'
       }
     ])
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      'https://mayicu.id/api/alkitab/v1/tb/Flm/1/1/200',
+      expect.objectContaining({
+        headers: { Accept: 'application/json' }
+      })
+    )
+  })
+
+  it('maps English versions with the same Indonesian book codes', async () => {
+    await fetchMayicuChapterVerses('nkjv', 'Yoh', 3)
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      'https://mayicu.id/api/alkitab/v1/nkjv/Yoh/3/1/200',
+      expect.any(Object)
+    )
+
+    await fetchMayicuChapterVerses('niv', 'Yoh', 3)
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      'https://mayicu.id/api/alkitab/v1/niv/Yoh/3/1/200',
+      expect.any(Object)
+    )
   })
 
   it('throws for unknown translations', async () => {
@@ -48,21 +78,25 @@ describe('mayicu api', () => {
     )
   })
 
-  it('throws when API returns no verses', async () => {
+  it('throws when the chapter is incomplete', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
         ok: true,
-        json: async () => []
+        json: async () => [
+          { number: 1, text: 'One' },
+          { number: 3, text: 'Three' }
+        ]
       }))
     )
 
     await expect(fetchMayicuVerses('tb', 'JHN', 3)).rejects.toThrow(
-      'No verses returned for Yohanes 3'
+      'Incomplete chapter returned for Yohanes 3'
     )
   })
 
-  it('throws on API errors', async () => {
+  it('throws on HTTP errors', async () => {
+    vi.useFakeTimers()
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
@@ -72,9 +106,10 @@ describe('mayicu api', () => {
       }))
     )
 
-    await expect(fetchMayicuChapterVerses('tb', 'Yoh', 3)).rejects.toThrow(
-      'Mayicu Alkitab API error 500'
-    )
+    const promise = fetchMayicuChapterVerses('tb', 'Yoh', 3)
+    const expectation = expect(promise).rejects.toThrow('Mayicu Alkitab API error 500')
+    await vi.runAllTimersAsync()
+    await expectation
   })
 
   it('retries on rate limit and eventually succeeds', async () => {
@@ -84,40 +119,37 @@ describe('mayicu api', () => {
       .mockResolvedValueOnce({
         ok: false,
         status: 429,
-        text: async () => 'Too Many Requests'
+        text: async () => 'slow down'
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => [{ number: 1, text: 'Pada mulanya' }]
+        json: async () => contentVerses(1)
       })
+
     vi.stubGlobal('fetch', fetchMock)
 
-    const promise = fetchMayicuChapterVerses('tb', 'Yoh', 3)
+    const promise = fetchMayicuChapterVerses('tb', 'Flm', 1)
     await vi.runAllTimersAsync()
     const verses = await promise
 
-    expect(verses).toEqual([{ verse: 1, text: 'Pada mulanya' }])
+    expect(verses).toHaveLength(1)
     expect(fetchMock).toHaveBeenCalledTimes(2)
-    vi.useRealTimers()
   })
 
-  it('throws a friendly message when rate limit persists', async () => {
+  it('retries on timeout and then fails', async () => {
     vi.useFakeTimers()
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: false,
-        status: 429,
-        text: async () => 'Too Many Requests'
-      }))
+      vi.fn(() => {
+        const error = new Error('Aborted')
+        error.name = 'AbortError'
+        return Promise.reject(error)
+      })
     )
 
     const promise = fetchMayicuChapterVerses('tb', 'Yoh', 3)
-    const expectation = expect(promise).rejects.toThrow(
-      'Mayicu Alkitab API rate limit reached. Please wait a moment and try again.'
-    )
+    const expectation = expect(promise).rejects.toThrow('Mayicu Alkitab API request timed out')
     await vi.runAllTimersAsync()
     await expectation
-    vi.useRealTimers()
   })
 })

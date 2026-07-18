@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { join } from 'path'
 import { app } from 'electron'
-import { BIBLE_BOOKS, TRANSLATIONS, getTranslationConfig } from '../shared/types'
+import { TRANSLATIONS, getLocalizedBibleBooks, getTranslationConfig } from '../shared/types'
 import type { Book, Translation, Verse } from '../shared/types'
 
 let db: Database.Database | null = null
@@ -47,6 +47,16 @@ export function initDatabase(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_verses_lookup
       ON verses (translation_id, book, chapter, verse);
+
+    CREATE TABLE IF NOT EXISTS chapter_cache (
+      translation_id TEXT NOT NULL,
+      book TEXT NOT NULL,
+      chapter INTEGER NOT NULL,
+      verse_count INTEGER NOT NULL,
+      fetched_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (translation_id, book, chapter),
+      FOREIGN KEY (translation_id) REFERENCES translations(id)
+    );
   `)
 
   seedTranslations()
@@ -56,8 +66,12 @@ export function initDatabase(): Database.Database {
 function seedTranslations(): void {
   const database = db!
   const insertTranslation = database.prepare(`
-    INSERT OR IGNORE INTO translations (id, name, abbreviation, locale)
+    INSERT INTO translations (id, name, abbreviation, locale)
     VALUES (@id, @name, @abbreviation, @locale)
+    ON CONFLICT (id) DO UPDATE SET
+      name = excluded.name,
+      abbreviation = excluded.abbreviation,
+      locale = excluded.locale
   `)
 
   const insertBook = database.prepare(`
@@ -78,7 +92,7 @@ function seedTranslations(): void {
         locale: translation.locale
       })
 
-      for (const book of BIBLE_BOOKS) {
+      for (const book of getLocalizedBibleBooks(translation.languageId)) {
         insertBook.run({
           id: book.id,
           translationId: translation.id,
@@ -99,16 +113,18 @@ export function getTranslations(): Translation[] {
     .prepare('SELECT id, name, abbreviation, locale FROM translations ORDER BY name')
     .all() as Array<{ id: string; name: string; abbreviation: string; locale: string }>
 
-  return rows.map((row) => {
-    const config = getTranslationConfig(row.id)
-    if (!config) return null
-    return {
-      ...config,
-      name: row.name,
-      abbreviation: row.abbreviation,
-      locale: row.locale
-    }
-  }).filter((t): t is Translation => t !== null)
+  return rows
+    .map((row) => {
+      const config = getTranslationConfig(row.id)
+      if (!config) return null
+      return {
+        ...config,
+        name: row.name,
+        abbreviation: row.abbreviation,
+        locale: row.locale
+      }
+    })
+    .filter((t): t is Translation => t !== null)
 }
 
 export function getBooks(translationId: string): Book[] {
@@ -177,6 +193,29 @@ export function getVerses(
   }))
 }
 
+export function isChapterCached(translationId: string, bookId: string, chapter: number): boolean {
+  const database = initDatabase()
+  const row = database
+    .prepare(
+      `
+    SELECT chapter_cache.verse_count AS expected_count, COUNT(verses.verse) AS actual_count
+    FROM chapter_cache
+    LEFT JOIN verses
+      ON verses.translation_id = chapter_cache.translation_id
+      AND verses.book = chapter_cache.book
+      AND verses.chapter = chapter_cache.chapter
+    WHERE chapter_cache.translation_id = ?
+      AND chapter_cache.book = ?
+      AND chapter_cache.chapter = ?
+    GROUP BY chapter_cache.verse_count
+  `
+    )
+    .get(translationId, bookId, chapter) as
+    { expected_count: number; actual_count: number } | undefined
+
+  return Boolean(row && row.expected_count > 0 && row.expected_count === row.actual_count)
+}
+
 export function insertVerses(
   translationId: string,
   bookId: string,
@@ -196,6 +235,41 @@ export function insertVerses(
   })
 
   insertMany(verses)
+}
+
+/** Replace all verses for a chapter so incomplete cache rows cannot linger. */
+export function replaceChapterVerses(
+  translationId: string,
+  bookId: string,
+  chapter: number,
+  verses: Array<{ verse: number; text: string }>
+): void {
+  const database = initDatabase()
+  const deleteChapter = database.prepare(`
+    DELETE FROM verses
+    WHERE translation_id = ? AND book = ? AND chapter = ?
+  `)
+  const insert = database.prepare(`
+    INSERT INTO verses (translation_id, book, chapter, verse, text)
+    VALUES (?, ?, ?, ?, ?)
+  `)
+  const markCached = database.prepare(`
+    INSERT INTO chapter_cache (translation_id, book, chapter, verse_count, fetched_at)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT (translation_id, book, chapter) DO UPDATE SET
+      verse_count = excluded.verse_count,
+      fetched_at = excluded.fetched_at
+  `)
+
+  const replace = database.transaction((items: Array<{ verse: number; text: string }>) => {
+    deleteChapter.run(translationId, bookId, chapter)
+    for (const item of items) {
+      insert.run(translationId, bookId, chapter, item.verse, item.text)
+    }
+    markCached.run(translationId, bookId, chapter, items.length)
+  })
+
+  replace(verses)
 }
 
 export function closeDatabase(): void {

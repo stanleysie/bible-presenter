@@ -23,6 +23,7 @@ const biblePresenter = {
   showVerse: vi.fn(),
   clearOutput: vi.fn(),
   setOutputDisplay: vi.fn(),
+  setDefaultTranslation: vi.fn(),
   updateTheme: vi.fn()
 }
 
@@ -41,7 +42,27 @@ describe('App', () => {
         name: 'Terjemahan Baru',
         abbreviation: 'TB',
         locale: 'id',
-        mayicuVersion: 'tb'
+        languageId: 'id',
+        apiVersion: 'tb',
+        contiguousVerses: true
+      },
+      {
+        id: 'nkjv',
+        name: 'New King James Version',
+        abbreviation: 'NKJV',
+        locale: 'en',
+        languageId: 'en',
+        apiVersion: 'nkjv',
+        contiguousVerses: true
+      },
+      {
+        id: 'niv',
+        name: 'New International Version',
+        abbreviation: 'NIV',
+        locale: 'en',
+        languageId: 'en',
+        apiVersion: 'niv',
+        contiguousVerses: false
       }
     ])
     biblePresenter.getSettings.mockResolvedValue({
@@ -82,13 +103,26 @@ describe('App', () => {
         }
       ]
     })
-    biblePresenter.showVerse.mockResolvedValue({ active: true, payload: null, theme: DEFAULT_THEME })
-    biblePresenter.clearOutput.mockResolvedValue({ active: false, payload: null, theme: DEFAULT_THEME })
+    biblePresenter.showVerse.mockResolvedValue({
+      active: true,
+      payload: null,
+      theme: DEFAULT_THEME
+    })
+    biblePresenter.clearOutput.mockResolvedValue({
+      active: false,
+      payload: null,
+      theme: DEFAULT_THEME
+    })
     biblePresenter.setOutputDisplay.mockResolvedValue({
       outputDisplayId: 1,
       defaultTranslationId: 'tb',
       theme: DEFAULT_THEME
     })
+    biblePresenter.setDefaultTranslation.mockImplementation(async (translationId: string) => ({
+      outputDisplayId: 1,
+      defaultTranslationId: translationId,
+      theme: DEFAULT_THEME
+    }))
     biblePresenter.updateTheme.mockResolvedValue({
       outputDisplayId: 1,
       defaultTranslationId: 'tb',
@@ -105,6 +139,27 @@ describe('App', () => {
     expect(
       within(preview).getByText('Pada mulanya Allah menciptakan langit dan bumi.')
     ).toBeInTheDocument()
+  })
+
+  it('groups versions by language and persists translation changes', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByText('Navigate')
+
+    const languageSelect = screen.getByLabelText('Language')
+    const versionSelect = screen.getByLabelText('Version')
+
+    expect(within(versionSelect).getByRole('option', { name: 'TB' })).toBeInTheDocument()
+    expect(within(versionSelect).queryByRole('option', { name: 'NIV' })).not.toBeInTheDocument()
+
+    await user.selectOptions(languageSelect, 'en')
+
+    expect(await within(versionSelect).findByRole('option', { name: 'NKJV' })).toBeInTheDocument()
+    expect(within(versionSelect).getByRole('option', { name: 'NIV' })).toBeInTheDocument()
+    expect(biblePresenter.setDefaultTranslation).toHaveBeenCalledWith('nkjv')
+
+    await user.selectOptions(versionSelect, 'niv')
+    expect(biblePresenter.setDefaultTranslation).toHaveBeenCalledWith('niv')
   })
 
   it('selects a verse when clicked', async () => {

@@ -7,7 +7,7 @@ import {
   getBooks,
   getChapterCount,
   getTranslations,
-  initDatabase,
+  initDatabase
 } from '../db/database'
 import { lookupReference } from '../db/reference'
 import { getChapterVerses } from '../db/verse-service'
@@ -18,9 +18,9 @@ import {
   type DisplayInfo,
   type OutputState,
   type PresentationTheme,
-  type VerseRange,
+  type VerseRange
 } from '../shared/types'
-import { getSettings, setOutputDisplayId, setTheme } from './settings'
+import { getSettings, setDefaultTranslationId, setOutputDisplayId, setTheme } from './settings'
 
 // WSL/Linux often lacks a working GPU stack for Chromium
 function isRunningUnderWsl(): boolean {
@@ -80,7 +80,7 @@ let outputWindow: BrowserWindow | null = null
 let outputState: OutputState = {
   active: false,
   payload: null,
-  theme: DEFAULT_THEME,
+  theme: DEFAULT_THEME
 }
 
 function getDisplays(): DisplayInfo[] {
@@ -88,7 +88,7 @@ function getDisplays(): DisplayInfo[] {
     id: display.id,
     label: display.label || `Display ${display.id}`,
     bounds: display.bounds,
-    isPrimary: display.id === screen.getPrimaryDisplay().id,
+    isPrimary: display.id === screen.getPrimaryDisplay().id
   }))
 }
 
@@ -98,10 +98,7 @@ function getOutputDisplay() {
   const saved = displays.find((d) => d.id === settings.outputDisplayId)
   if (saved) return saved
   if (displays.length > 1)
-    return (
-      displays.find((d) => d.id !== screen.getPrimaryDisplay().id) ??
-      displays[0]
-    )
+    return displays.find((d) => d.id !== screen.getPrimaryDisplay().id) ?? displays[0]
   return displays[0]
 }
 
@@ -131,8 +128,8 @@ function createOutputWindow(): void {
       preload: join(__dirname, '../preload/preload.js'),
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false,
-    },
+      nodeIntegration: false
+    }
   })
 
   outputWindow.on('ready-to-show', () => {
@@ -145,9 +142,7 @@ function createOutputWindow(): void {
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    outputWindow.loadURL(
-      `${process.env['ELECTRON_RENDERER_URL']}/output/index.html`,
-    )
+    outputWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/output/index.html`)
   } else {
     outputWindow.loadFile(join(__dirname, '../renderer/output/index.html'))
   }
@@ -171,8 +166,8 @@ function createControlWindow(): void {
       preload: join(__dirname, '../preload/preload.js'),
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false,
-    },
+      nodeIntegration: false
+    }
   })
 
   controlWindow.on('ready-to-show', () => {
@@ -187,9 +182,7 @@ function createControlWindow(): void {
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    controlWindow.loadURL(
-      `${process.env['ELECTRON_RENDERER_URL']}/src/index.html`,
-    )
+    controlWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/src/index.html`)
   } else {
     controlWindow.loadFile(join(__dirname, '../renderer/src/index.html'))
   }
@@ -205,10 +198,7 @@ function createControlWindow(): void {
 
 function broadcastOutputState(): void {
   if (outputWindow && !outputWindow.isDestroyed()) {
-    outputWindow.webContents.send(
-      IPC_CHANNELS.OUTPUT_STATE_CHANGED,
-      outputState,
-    )
+    outputWindow.webContents.send(IPC_CHANNELS.OUTPUT_STATE_CHANGED, outputState)
   }
 }
 
@@ -219,7 +209,7 @@ function showVerse(payload: VerseRange): void {
   outputState = {
     active: true,
     payload,
-    theme: getSettings().theme,
+    theme: getSettings().theme
   }
   broadcastOutputState()
 }
@@ -228,7 +218,7 @@ function clearOutput(): void {
   outputState = {
     ...outputState,
     active: false,
-    theme: getSettings().theme,
+    theme: getSettings().theme
   }
   broadcastOutputState()
 }
@@ -250,38 +240,35 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.GET_SETTINGS, () => getSettings())
 
-  ipcMain.handle(
-    IPC_CHANNELS.SET_OUTPUT_DISPLAY,
-    (_event, displayId: number) => {
-      setOutputDisplayId(displayId)
-      repositionOutputWindow()
-      return getSettings()
-    },
-  )
+  ipcMain.handle(IPC_CHANNELS.SET_DEFAULT_TRANSLATION, (_event, translationId: string) => {
+    if (!TRANSLATIONS.some((translation) => translation.id === translationId)) {
+      throw new Error(`Unknown translation: ${translationId}`)
+    }
+    setDefaultTranslationId(translationId)
+    return getSettings()
+  })
 
-  ipcMain.handle(
-    IPC_CHANNELS.UPDATE_THEME,
-    (_event, theme: PresentationTheme) => {
-      setTheme(theme)
-      outputState = { ...outputState, theme }
-      broadcastOutputState()
-      return getSettings()
-    },
-  )
+  ipcMain.handle(IPC_CHANNELS.SET_OUTPUT_DISPLAY, (_event, displayId: number) => {
+    setOutputDisplayId(displayId)
+    repositionOutputWindow()
+    return getSettings()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.UPDATE_THEME, (_event, theme: PresentationTheme) => {
+    setTheme(theme)
+    outputState = { ...outputState, theme }
+    broadcastOutputState()
+    return getSettings()
+  })
 
   ipcMain.handle(IPC_CHANNELS.GET_TRANSLATIONS, () => getTranslations())
 
-  ipcMain.handle(IPC_CHANNELS.GET_BOOKS, (_event, translationId: string) =>
-    getBooks(translationId),
-  )
+  ipcMain.handle(IPC_CHANNELS.GET_BOOKS, (_event, translationId: string) => getBooks(translationId))
 
-  ipcMain.handle(
-    IPC_CHANNELS.GET_CHAPTERS,
-    (_event, translationId: string, bookId: string) => {
-      const count = getChapterCount(translationId, bookId)
-      return Array.from({ length: count }, (_, i) => i + 1)
-    },
-  )
+  ipcMain.handle(IPC_CHANNELS.GET_CHAPTERS, (_event, translationId: string, bookId: string) => {
+    const count = getChapterCount(translationId, bookId)
+    return Array.from({ length: count }, (_, i) => i + 1)
+  })
 
   ipcMain.handle(
     IPC_CHANNELS.GET_VERSES,
@@ -291,36 +278,26 @@ function registerIpcHandlers(): void {
       bookId: string,
       chapter: number,
       startVerse?: number,
-      endVerse?: number,
+      endVerse?: number
     ) => {
-      const verses = await getChapterVerses(
-        translationId,
-        bookId,
-        chapter,
-        startVerse,
-        endVerse,
-      )
+      const verses = await getChapterVerses(translationId, bookId, chapter, startVerse, endVerse)
       const translation = TRANSLATIONS.find((t) => t.id === translationId)
       const bookName = verses[0]?.bookName ?? ''
       return {
         translationId,
         translationAbbreviation: translation?.abbreviation ?? '',
         reference: verses.length > 0 ? `${bookName} ${chapter}` : '',
-        verses,
+        verses
       } satisfies VerseRange
-    },
+    }
   )
 
   ipcMain.handle(
     IPC_CHANNELS.LOOKUP_REFERENCE,
     async (_event, translationId: string, reference: string) => {
       const translation = TRANSLATIONS.find((t) => t.id === translationId)
-      return lookupReference(
-        translationId,
-        translation?.abbreviation ?? '',
-        reference,
-      )
-    },
+      return lookupReference(translationId, translation?.abbreviation ?? '', reference)
+    }
   )
 
   ipcMain.handle(IPC_CHANNELS.SHOW_VERSE, (_event, payload: VerseRange) => {

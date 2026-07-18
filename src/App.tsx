@@ -13,10 +13,11 @@ import type {
   Verse,
   VerseRange
 } from '../shared/types'
-import { DEFAULT_THEME } from '../shared/types'
+import { BIBLE_LANGUAGES, DEFAULT_THEME } from '../shared/types'
 
 export default function App(): JSX.Element {
   const [translations, setTranslations] = useState<Translation[]>([])
+  const [languageId, setLanguageId] = useState('id')
   const [translationId, setTranslationId] = useState('tb')
   const [books, setBooks] = useState<Book[]>([])
   const [bookId, setBookId] = useState('GEN')
@@ -44,56 +45,59 @@ export default function App(): JSX.Element {
   }, [error])
 
   const currentTranslation = translations.find((t) => t.id === translationId)
+  const availableLanguages = BIBLE_LANGUAGES.filter((language) =>
+    translations.some((translation) => translation.languageId === language.id)
+  )
+  const languageTranslations = translations.filter(
+    (translation) => translation.languageId === languageId
+  )
 
-  const loadVerses = useCallback(
-    async (tId: string, bId: string, ch: number) => {
-      const requestId = ++loadRequestIdRef.current
-      setLoadingVerses(true)
-      setError(null)
-      try {
-        const result = await window.biblePresenter.getVerses(tId, bId, ch)
-        if (requestId !== loadRequestIdRef.current) return
+  const loadVerses = useCallback(async (tId: string, bId: string, ch: number) => {
+    const requestId = ++loadRequestIdRef.current
+    setLoadingVerses(true)
+    setError(null)
+    try {
+      const result = await window.biblePresenter.getVerses(tId, bId, ch)
+      if (requestId !== loadRequestIdRef.current) return
 
-        setVerses(result.verses)
-        if (result.verses.length > 0) {
-          const pending = pendingVerseRef.current
-          pendingVerseRef.current = null
-          if (pending !== null && result.verses.some((v) => v.verse === pending)) {
-            const selected = result.verses.find((v) => v.verse === pending)!
-            setSelectedVerse(selected.verse)
-            setPreview({
-              translationId: result.translationId,
-              translationAbbreviation: result.translationAbbreviation,
-              reference: `${selected.bookName} ${selected.chapter}:${selected.verse}`,
-              verses: [selected]
-            })
-          } else {
-            setSelectedVerse(null)
-            setPreview(null)
-          }
+      setVerses(result.verses)
+      if (result.verses.length > 0) {
+        const pending = pendingVerseRef.current
+        pendingVerseRef.current = null
+        if (pending !== null && result.verses.some((v) => v.verse === pending)) {
+          const selected = result.verses.find((v) => v.verse === pending)!
+          setSelectedVerse(selected.verse)
+          setPreview({
+            translationId: result.translationId,
+            translationAbbreviation: result.translationAbbreviation,
+            reference: `${selected.bookName} ${selected.chapter}:${selected.verse}`,
+            verses: [selected]
+          })
         } else {
           setSelectedVerse(null)
           setPreview(null)
         }
-      } catch (err) {
-        if (requestId !== loadRequestIdRef.current) return
-
-        setVerses([])
+      } else {
         setSelectedVerse(null)
         setPreview(null)
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Could not load verses. Check your internet connection.'
-        )
-      } finally {
-        if (requestId === loadRequestIdRef.current) {
-          setLoadingVerses(false)
-        }
       }
-    },
-    []
-  )
+    } catch (err) {
+      if (requestId !== loadRequestIdRef.current) return
+
+      setVerses([])
+      setSelectedVerse(null)
+      setPreview(null)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Could not load verses. Check your internet connection.'
+      )
+    } finally {
+      if (requestId === loadRequestIdRef.current) {
+        setLoadingVerses(false)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     async function init(): Promise<void> {
@@ -106,7 +110,12 @@ export default function App(): JSX.Element {
       setSettings(appSettings)
       setTheme({ ...DEFAULT_THEME, ...appSettings.theme })
       const savedTranslationId = appSettings.defaultTranslationId
-      setTranslationId(trans.some((t) => t.id === savedTranslationId) ? savedTranslationId : 'tb')
+      const selectedTranslation =
+        trans.find((translation) => translation.id === savedTranslationId) ?? trans[0]
+      if (selectedTranslation) {
+        setTranslationId(selectedTranslation.id)
+        setLanguageId(selectedTranslation.languageId)
+      }
       setDisplays(displayList)
     }
     init()
@@ -218,6 +227,35 @@ export default function App(): JSX.Element {
     setSettings(updated)
   }
 
+  const selectTranslation = async (nextTranslationId: string): Promise<void> => {
+    const nextTranslation = translations.find((translation) => translation.id === nextTranslationId)
+    if (!nextTranslation || nextTranslation.id === translationId) return
+
+    loadRequestIdRef.current += 1
+    pendingVerseRef.current = 1
+    setLanguageId(nextTranslation.languageId)
+    setTranslationId(nextTranslation.id)
+    setBookId('GEN')
+    setChapter(1)
+    setVerses([])
+    setSelectedVerse(null)
+    setPreview(null)
+    setOutputVisible(false)
+    await window.biblePresenter.clearOutput()
+    const updated = await window.biblePresenter.setDefaultTranslation(nextTranslation.id)
+    setSettings(updated)
+  }
+
+  const handleLanguageChange = (nextLanguageId: string): void => {
+    setLanguageId(nextLanguageId)
+    const firstTranslation = translations.find(
+      (translation) => translation.languageId === nextLanguageId
+    )
+    if (firstTranslation) {
+      void selectTranslation(firstTranslation.id)
+    }
+  }
+
   const handleThemeChange = async (updates: Partial<PresentationTheme>): Promise<void> => {
     const newTheme = { ...theme, ...updates }
     setTheme(newTheme)
@@ -318,7 +356,7 @@ export default function App(): JSX.Element {
           </span>
           <div className="header-brand-text">
             <h1>Bible Presenter</h1>
-            <p className="header-subtitle">Terjemahan Baru</p>
+            <p className="header-subtitle">{currentTranslation?.name ?? 'Bible translation'}</p>
           </div>
         </div>
         <div className="header-actions">
@@ -332,6 +370,36 @@ export default function App(): JSX.Element {
         <aside className="sidebar sidebar-left">
           <div className="panel navigate-panel">
             <h2>Navigate</h2>
+            <div className="field-row translation-row">
+              <div className="field">
+                <label htmlFor="language-select">Language</label>
+                <select
+                  id="language-select"
+                  value={languageId}
+                  onChange={(event) => handleLanguageChange(event.target.value)}
+                >
+                  {availableLanguages.map((language) => (
+                    <option key={language.id} value={language.id}>
+                      {language.nativeName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="translation-select">Version</label>
+                <select
+                  id="translation-select"
+                  value={translationId}
+                  onChange={(event) => void selectTranslation(event.target.value)}
+                >
+                  {languageTranslations.map((translation) => (
+                    <option key={translation.id} value={translation.id}>
+                      {translation.abbreviation}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div className="field-row">
               <div className="field">
                 <label htmlFor="book-select">Book</label>
@@ -397,7 +465,7 @@ export default function App(): JSX.Element {
               <input
                 id="reference-input"
                 type="text"
-                placeholder="e.g. Yohanes 3:16"
+                placeholder={languageId === 'id' ? 'e.g. Yohanes 3:16' : 'e.g. John 3:16'}
                 value={referenceInput}
                 onChange={(e) => setReferenceInput(e.target.value)}
               />
@@ -428,9 +496,7 @@ export default function App(): JSX.Element {
                   />
                 </div>
               ) : (
-                <div className="preview-empty">
-                  Select a verse or find a reference to preview
-                </div>
+                <div className="preview-empty">Select a verse or find a reference to preview</div>
               )}
             </div>
             <div className="preview-nav">
@@ -534,7 +600,8 @@ export default function App(): JSX.Element {
 
       <div className="shortcuts">
         <kbd>Esc</kbd> Hide &nbsp;
-        <kbd>←</kbd><kbd>→</kbd> Previous / next verse
+        <kbd>←</kbd>
+        <kbd>→</kbd> Previous / next verse
       </div>
     </div>
   )

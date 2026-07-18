@@ -34,7 +34,11 @@ body,
 }
 
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--bg-app);
   color: var(--text);
   line-height: 1.45;
@@ -47,7 +51,10 @@ button {
   border-radius: var(--radius-sm);
   padding: 8px 16px;
   font-size: 14px;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 button:disabled {
@@ -174,7 +181,7 @@ select:focus {
 
 .main {
   display: grid;
-  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) minmax(220px, 300px);
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr) minmax(220px, 300px);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -474,6 +481,10 @@ select:focus {
   margin-bottom: 0;
 }
 
+.translation-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
 .search-row {
   display: flex;
   gap: 8px;
@@ -761,7 +772,7 @@ kbd {
 
 @media (max-width: 1280px) {
   .main {
-    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr) minmax(200px, 240px);
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(200px, 240px);
   }
 
   .sidebar {
@@ -784,7 +795,7 @@ kbd {
 
 @media (max-width: 1024px) {
   .main {
-    grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) minmax(180px, 220px);
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(180px, 220px);
   }
 
   .header {

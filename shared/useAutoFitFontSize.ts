@@ -1,8 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
-import {
-  MIN_VERSE_FONT_SIZE,
-  getPreferredVerseFontSize
-} from './verse-layout'
+import { MIN_VERSE_FONT_SIZE, getPreferredVerseFontSize } from './verse-layout'
 
 export interface AutoFitFontSizeOptions {
   minFontSize?: number
@@ -45,12 +42,7 @@ export function useAutoFitFontSize(
 
       textEl.style.width = `${maxWidth}px`
 
-      const preferred = getPreferredVerseFontSize(
-        maxHeight,
-        maxWidth,
-        maxFontSize,
-        minFontSize
-      )
+      const preferred = getPreferredVerseFontSize(maxHeight, maxWidth, maxFontSize, minFontSize)
       let best = preferred
 
       if (!fitsAt(textEl, preferred, maxHeight, maxWidth)) {

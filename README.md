@@ -15,8 +15,8 @@ A Windows desktop app for presenting Bible verses on a projector or second displ
 ## Features
 
 - **Dual-window presentation** — operator control panel + fullscreen output on a second monitor
-- **Indonesian TB** — Terjemahan Baru
-- **Live Bible text** — verses loaded from [mayicu Alkitab API](https://mayicu.id/api/alkitab/v1/docs) as you browse, with local chapter caching
+- **Multiple languages and versions** — Bahasa Indonesia (TB) and English (NKJV, NIV), organized by language
+- **Live Bible text** — verses loaded from [Mayicu Alkitab API](https://mayicu.id/api/alkitab/v1/docs) as you browse, with automatic fallback to [alkitab-api](https://github.com/sonnylazuardi/alkitab-api) and local chapter caching
 - **Reference lookup** — type references like `Yohanes 3:16` or `John 3:16` (one verse at a time; use arrow keys to advance)
 - **Book/chapter/verse navigation** — browse and select verses
 - **Show / Hide projector** — preview on the control panel, then show or hide output on the projector
@@ -26,7 +26,7 @@ A Windows desktop app for presenting Bible verses on a projector or second displ
 
 ## Roadmap
 
-- **English Bible support** — planned for the next major release (currently Indonesian TB only)
+- **More Bible versions** — add additional Mayicu / alkitab-api versions and localized book metadata
 - **Other operating systems** — macOS and Linux support planned for the next major release (currently Windows only)
 
 ## Requirements
@@ -92,7 +92,7 @@ GitHub creates a release with the installer attached.
 
 ## Bible text
 
-TB (Terjemahan Baru) verse text is loaded from the [mayicu Alkitab API](https://mayicu.id/api/alkitab/v1/docs). See [LICENSING.md](LICENSING.md) for notes on use and distribution.
+Bible text (currently TB, NKJV, and NIV) is loaded at runtime primarily from the [Mayicu Alkitab API](https://mayicu.id/api/alkitab/v1/docs). If Mayicu fails or returns incomplete data, the app automatically falls back to [alkitab-api](https://github.com/sonnylazuardi/alkitab-api) / [bible.sonnylab.com](https://bible.sonnylab.com) (sourced from [Alkitab Mobile SABDA](http://alkitab.mobi/)). Versions are grouped by language, and successfully fetched chapters are cached separately per version in local SQLite. See [LICENSING.md](LICENSING.md) for notes on use and distribution.
 
 ## Project structure
 
