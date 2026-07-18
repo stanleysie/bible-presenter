@@ -35,6 +35,18 @@ describe('parseReference', () => {
       startVerse: 16,
       endVerse: 16
     })
+    expect(parseReference('Song of Solomon 1:2')).toEqual({
+      bookId: 'SNG',
+      chapter: 1,
+      startVerse: 2,
+      endVerse: 2
+    })
+    expect(parseReference('Kisah Para Rasul 2:1')).toEqual({
+      bookId: 'ACT',
+      chapter: 2,
+      startVerse: 1,
+      endVerse: 1
+    })
   })
 
   it('parses chapter-only references', () => {

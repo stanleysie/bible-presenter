@@ -20,7 +20,12 @@ import {
   type PresentationTheme,
   type VerseRange,
 } from '../shared/types'
-import { getSettings, setOutputDisplayId, setTheme } from './settings'
+import {
+  getSettings,
+  setDefaultTranslationId,
+  setOutputDisplayId,
+  setTheme
+} from './settings'
 
 // WSL/Linux often lacks a working GPU stack for Chromium
 function isRunningUnderWsl(): boolean {
@@ -249,6 +254,17 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.GET_DISPLAYS, () => getDisplays())
 
   ipcMain.handle(IPC_CHANNELS.GET_SETTINGS, () => getSettings())
+
+  ipcMain.handle(
+    IPC_CHANNELS.SET_DEFAULT_TRANSLATION,
+    (_event, translationId: string) => {
+      if (!TRANSLATIONS.some((translation) => translation.id === translationId)) {
+        throw new Error(`Unknown translation: ${translationId}`)
+      }
+      setDefaultTranslationId(translationId)
+      return getSettings()
+    },
+  )
 
   ipcMain.handle(
     IPC_CHANNELS.SET_OUTPUT_DISPLAY,

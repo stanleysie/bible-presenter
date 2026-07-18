@@ -7,7 +7,7 @@ import {
 import { getChapterVerses } from './verse-service'
 
 const REFERENCE_REGEX =
-  /^(\d?\s?[a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?$/i
+  /^(.+?)\s+(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?$/iu
 
 export function normalizeReference(input: string): string {
   let normalized = input
@@ -15,11 +15,8 @@ export function normalizeReference(input: string): string {
     .replace(/\s+/g, ' ')
     .replace(/\s*([:\-–])\s*/g, '$1')
 
-  // Allow glued chapter numbers, e.g. "Yohanes3:16" or "1 Yohanes3:16"
-  normalized = normalized.replace(
-    /^((?:\d+\s+)?[a-zA-Z]+(?:\s+[a-zA-Z]+)?)(\d)/,
-    '$1 $2'
-  )
+  // Allow glued chapter numbers, e.g. "Yohanes3:16" or "Song of Solomon1:2".
+  normalized = normalized.replace(/^(.+?\p{L})(\d+)(?=:|$)/u, '$1 $2')
 
   return normalized
 }

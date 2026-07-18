@@ -3,6 +3,7 @@ export const IPC_CHANNELS = {
   GET_DISPLAYS: 'get-displays',
   GET_SETTINGS: 'get-settings',
   SET_OUTPUT_DISPLAY: 'set-output-display',
+  SET_DEFAULT_TRANSLATION: 'set-default-translation',
   UPDATE_THEME: 'update-theme',
 
   // Bible data
@@ -42,7 +43,17 @@ export interface Translation {
   name: string
   abbreviation: string
   locale: string
-  mayicuVersion: string
+  languageId: string
+  /** Shared upstream version code used by Mayicu and alkitab-api (tb, nkjv, niv). */
+  apiVersion: string
+  /** Whether the source is expected to include every numbered verse. */
+  contiguousVerses: boolean
+}
+
+export interface BibleLanguage {
+  id: string
+  name: string
+  nativeName: string
 }
 
 export interface Book {
@@ -78,13 +89,39 @@ export const DEFAULT_THEME: PresentationTheme = {
   textColor: '#ffffff'
 }
 
+export const BIBLE_LANGUAGES: BibleLanguage[] = [
+  { id: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia' },
+  { id: 'en', name: 'English', nativeName: 'English' }
+]
+
 export const TRANSLATIONS: Translation[] = [
   {
     id: 'tb',
     name: 'Terjemahan Baru',
     abbreviation: 'TB',
     locale: 'id',
-    mayicuVersion: 'tb'
+    languageId: 'id',
+    apiVersion: 'tb',
+    contiguousVerses: true
+  },
+  {
+    id: 'nkjv',
+    name: 'New King James Version',
+    abbreviation: 'NKJV',
+    locale: 'en',
+    languageId: 'en',
+    apiVersion: 'nkjv',
+    contiguousVerses: true
+  },
+  {
+    id: 'niv',
+    name: 'New International Version',
+    abbreviation: 'NIV',
+    locale: 'en',
+    languageId: 'en',
+    apiVersion: 'niv',
+    // NIV intentionally omits some verse numbers found in the KJV tradition.
+    contiguousVerses: false
   }
 ]
 
@@ -160,6 +197,31 @@ export const BIBLE_BOOKS = [
   { id: 'JUD', name: 'Yudas', order: 65, chapters: 1 },
   { id: 'REV', name: 'Wahyu', order: 66, chapters: 22 }
 ]
+
+const ENGLISH_BOOK_NAMES: Record<string, string> = {
+  GEN: 'Genesis', EXO: 'Exodus', LEV: 'Leviticus', NUM: 'Numbers', DEU: 'Deuteronomy',
+  JOS: 'Joshua', JDG: 'Judges', RUT: 'Ruth', '1SA': '1 Samuel', '2SA': '2 Samuel',
+  '1KI': '1 Kings', '2KI': '2 Kings', '1CH': '1 Chronicles', '2CH': '2 Chronicles',
+  EZR: 'Ezra', NEH: 'Nehemiah', EST: 'Esther', JOB: 'Job', PSA: 'Psalms',
+  PRO: 'Proverbs', ECC: 'Ecclesiastes', SNG: 'Song of Solomon', ISA: 'Isaiah',
+  JER: 'Jeremiah', LAM: 'Lamentations', EZK: 'Ezekiel', DAN: 'Daniel', HOS: 'Hosea',
+  JOL: 'Joel', AMO: 'Amos', OBA: 'Obadiah', JON: 'Jonah', MIC: 'Micah', NAM: 'Nahum',
+  HAB: 'Habakkuk', ZEP: 'Zephaniah', HAG: 'Haggai', ZEC: 'Zechariah', MAL: 'Malachi',
+  MAT: 'Matthew', MRK: 'Mark', LUK: 'Luke', JHN: 'John', ACT: 'Acts', ROM: 'Romans',
+  '1CO': '1 Corinthians', '2CO': '2 Corinthians', GAL: 'Galatians', EPH: 'Ephesians',
+  PHP: 'Philippians', COL: 'Colossians', '1TH': '1 Thessalonians',
+  '2TH': '2 Thessalonians', '1TI': '1 Timothy', '2TI': '2 Timothy', TIT: 'Titus',
+  PHM: 'Philemon', HEB: 'Hebrews', JAS: 'James', '1PE': '1 Peter', '2PE': '2 Peter',
+  '1JN': '1 John', '2JN': '2 John', '3JN': '3 John', JUD: 'Jude', REV: 'Revelation'
+}
+
+export function getLocalizedBibleBooks(languageId: string): typeof BIBLE_BOOKS {
+  if (languageId !== 'en') return BIBLE_BOOKS
+  return BIBLE_BOOKS.map((book) => ({
+    ...book,
+    name: ENGLISH_BOOK_NAMES[book.id] ?? book.name
+  }))
+}
 
 export const BOOK_NAME_TO_ID: Record<string, string> = {
   genesis: 'GEN',

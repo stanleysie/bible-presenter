@@ -22,6 +22,10 @@ export function setOutputDisplayId(displayId: number | null): void {
   store.set('outputDisplayId', displayId)
 }
 
+export function setDefaultTranslationId(translationId: string): void {
+  store.set('defaultTranslationId', translationId)
+}
+
 export function setTheme(theme: AppSettings['theme']): void {
   store.set('theme', theme)
 }

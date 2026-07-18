@@ -1,16 +1,25 @@
 import { describe, expect, it } from 'vitest'
+import {
+  BOOK_ID_TO_ALKITAB_BOOK,
+  BOOK_ID_TO_ALKITAB_ENGLISH_BOOK
+} from './alkitab-books'
 import { BOOK_ID_TO_MAYICU_CODE } from './mayicu-books'
-import { BIBLE_BOOKS, BOOK_NAME_TO_ID, TRANSLATIONS, getTranslationConfig } from './types'
+import {
+  BIBLE_BOOKS,
+  BIBLE_LANGUAGES,
+  BOOK_NAME_TO_ID,
+  TRANSLATIONS,
+  getLocalizedBibleBooks,
+  getTranslationConfig
+} from './types'
 
 describe('bible metadata', () => {
-  it('ships only TB translation', () => {
-    expect(TRANSLATIONS).toHaveLength(1)
-    expect(TRANSLATIONS[0]).toMatchObject({
-      id: 'tb',
-      abbreviation: 'TB',
-      locale: 'id',
-      mayicuVersion: 'tb'
-    })
+  it('groups translations by language', () => {
+    expect(BIBLE_LANGUAGES.map((language) => language.id)).toEqual(['id', 'en'])
+    expect(TRANSLATIONS.filter((translation) => translation.languageId === 'id'))
+      .toHaveLength(1)
+    expect(TRANSLATIONS.filter((translation) => translation.languageId === 'en')
+      .map((translation) => translation.id)).toEqual(['nkjv', 'niv'])
   })
 
   it('contains 66 canonical books with Indonesian names', () => {
@@ -19,10 +28,18 @@ describe('bible metadata', () => {
     expect(BIBLE_BOOKS.find((book) => book.id === 'JHN')?.name).toBe('Yohanes')
   })
 
-  it('maps every book id to a mayicu code', () => {
+  it('maps every book id to Mayicu and alkitab names', () => {
     for (const book of BIBLE_BOOKS) {
       expect(BOOK_ID_TO_MAYICU_CODE[book.id]).toBeTruthy()
+      expect(BOOK_ID_TO_ALKITAB_BOOK[book.id]).toBeTruthy()
+      expect(BOOK_ID_TO_ALKITAB_ENGLISH_BOOK[book.id]).toBeTruthy()
     }
+  })
+
+  it('localizes book names by language', () => {
+    expect(getLocalizedBibleBooks('id')[0].name).toBe('Kejadian')
+    expect(getLocalizedBibleBooks('en')[0].name).toBe('Genesis')
+    expect(getLocalizedBibleBooks('en').find((book) => book.id === 'JHN')?.name).toBe('John')
   })
 
   it('resolves Indonesian aliases used in quick reference', () => {
@@ -32,7 +49,9 @@ describe('bible metadata', () => {
   })
 
   it('returns translation config by id', () => {
-    expect(getTranslationConfig('tb')?.mayicuVersion).toBe('tb')
+    expect(getTranslationConfig('tb')?.apiVersion).toBe('tb')
+    expect(getTranslationConfig('nkjv')?.apiVersion).toBe('nkjv')
+    expect(getTranslationConfig('niv')?.apiVersion).toBe('niv')
     expect(getTranslationConfig('missing')).toBeUndefined()
   })
 })

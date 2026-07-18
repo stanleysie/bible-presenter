@@ -14,6 +14,8 @@ const api = {
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke(IPC_CHANNELS.GET_SETTINGS),
   setOutputDisplay: (displayId: number): Promise<AppSettings> =>
     ipcRenderer.invoke(IPC_CHANNELS.SET_OUTPUT_DISPLAY, displayId),
+  setDefaultTranslation: (translationId: string): Promise<AppSettings> =>
+    ipcRenderer.invoke(IPC_CHANNELS.SET_DEFAULT_TRANSLATION, translationId),
   updateTheme: (theme: PresentationTheme): Promise<AppSettings> =>
     ipcRenderer.invoke(IPC_CHANNELS.UPDATE_THEME, theme),
   getTranslations: (): Promise<Translation[]> => ipcRenderer.invoke(IPC_CHANNELS.GET_TRANSLATIONS),
