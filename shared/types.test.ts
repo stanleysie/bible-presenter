@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  BOOK_ID_TO_ALKITAB_BOOK,
-  BOOK_ID_TO_ALKITAB_ENGLISH_BOOK
-} from './alkitab-books'
+import { BOOK_ID_TO_ALKITAB_BOOK, BOOK_ID_TO_ALKITAB_ENGLISH_BOOK } from './alkitab-books'
 import { BOOK_ID_TO_MAYICU_CODE } from './mayicu-books'
 import {
   BIBLE_BOOKS,
@@ -16,10 +13,12 @@ import {
 describe('bible metadata', () => {
   it('groups translations by language', () => {
     expect(BIBLE_LANGUAGES.map((language) => language.id)).toEqual(['id', 'en'])
-    expect(TRANSLATIONS.filter((translation) => translation.languageId === 'id'))
-      .toHaveLength(1)
-    expect(TRANSLATIONS.filter((translation) => translation.languageId === 'en')
-      .map((translation) => translation.id)).toEqual(['nkjv', 'niv'])
+    expect(TRANSLATIONS.filter((translation) => translation.languageId === 'id')).toHaveLength(1)
+    expect(
+      TRANSLATIONS.filter((translation) => translation.languageId === 'en').map(
+        (translation) => translation.id
+      )
+    ).toEqual(['nkjv', 'niv'])
   })
 
   it('contains 66 canonical books with Indonesian names', () => {

@@ -103,9 +103,7 @@ async function alkitabFetch(body: Record<string, unknown>): Promise<GraphQLRespo
   throw lastError ?? new Error('Alkitab API request failed')
 }
 
-export function parseAlkitabVerses(
-  data: unknown
-): Array<{ verse: number; text: string }> {
+export function parseAlkitabVerses(data: unknown): Array<{ verse: number; text: string }> {
   if (!Array.isArray(data)) {
     return []
   }
@@ -148,7 +146,10 @@ export async function fetchAlkitabChapterVerses(
   })
 
   if (payload.errors?.length) {
-    const message = payload.errors.map((error) => error.message).filter(Boolean).join('; ')
+    const message = payload.errors
+      .map((error) => error.message)
+      .filter(Boolean)
+      .join('; ')
     throw new Error(message || 'Alkitab API returned a GraphQL error')
   }
 

@@ -29,14 +29,20 @@ const api = {
     startVerse?: number,
     endVerse?: number
   ): Promise<VerseRange> =>
-    ipcRenderer.invoke(IPC_CHANNELS.GET_VERSES, translationId, bookId, chapter, startVerse, endVerse),
+    ipcRenderer.invoke(
+      IPC_CHANNELS.GET_VERSES,
+      translationId,
+      bookId,
+      chapter,
+      startVerse,
+      endVerse
+    ),
   lookupReference: (translationId: string, reference: string): Promise<VerseRange | null> =>
     ipcRenderer.invoke(IPC_CHANNELS.LOOKUP_REFERENCE, translationId, reference),
   showVerse: (payload: VerseRange): Promise<OutputState> =>
     ipcRenderer.invoke(IPC_CHANNELS.SHOW_VERSE, payload),
   clearOutput: (): Promise<OutputState> => ipcRenderer.invoke(IPC_CHANNELS.CLEAR_OUTPUT),
-  getOutputState: (): Promise<OutputState> =>
-    ipcRenderer.invoke(IPC_CHANNELS.GET_OUTPUT_STATE),
+  getOutputState: (): Promise<OutputState> => ipcRenderer.invoke(IPC_CHANNELS.GET_OUTPUT_STATE),
   onOutputStateChanged: (callback: (state: OutputState) => void): (() => void) => {
     const handler = (_event: Electron.IpcRendererEvent, state: OutputState): void => callback(state)
     ipcRenderer.on(IPC_CHANNELS.OUTPUT_STATE_CHANGED, handler)

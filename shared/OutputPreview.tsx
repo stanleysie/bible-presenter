@@ -1,8 +1,5 @@
 import { AutoFitVerse } from './AutoFitVerse'
-import {
-  PREVIEW_MAX_VERSE_FONT_SIZE,
-  PREVIEW_MIN_VERSE_FONT_SIZE
-} from './verse-layout'
+import { PREVIEW_MAX_VERSE_FONT_SIZE, PREVIEW_MIN_VERSE_FONT_SIZE } from './verse-layout'
 import { formatDisplayReference } from './format-reference'
 import { getSlideBackgroundStyle } from './slide-background'
 import type { PresentationTheme, VerseRange } from './types'
@@ -42,19 +39,19 @@ export function OutputPreview({
           <div className={referenceClassName} style={{ color: theme.textColor }}>
             {formatDisplayReference(payload.reference, payload.translationAbbreviation)}
           </div>
-            <AutoFitVerse
-              text={verse.text}
-              color={theme.textColor}
-              verseClassName={verseClassName}
-              autoFit={
-                isCompact
-                  ? {
-                      minFontSize: PREVIEW_MIN_VERSE_FONT_SIZE,
-                      maxFontSize: PREVIEW_MAX_VERSE_FONT_SIZE
-                    }
-                  : undefined
-              }
-            />
+          <AutoFitVerse
+            text={verse.text}
+            color={theme.textColor}
+            verseClassName={verseClassName}
+            autoFit={
+              isCompact
+                ? {
+                    minFontSize: PREVIEW_MIN_VERSE_FONT_SIZE,
+                    maxFontSize: PREVIEW_MAX_VERSE_FONT_SIZE
+                  }
+                : undefined
+            }
+          />
         </div>
       )}
     </div>

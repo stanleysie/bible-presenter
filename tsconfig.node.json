@@ -1,11 +1,6 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": [
-    "electron.vite.config.ts",
-    "electron/**/*",
-    "db/**/*",
-    "shared/**/*"
-  ],
+  "include": ["electron.vite.config.ts", "electron/**/*", "db/**/*", "shared/**/*"],
   "compilerOptions": {
     "composite": true,
     "esModuleInterop": true,

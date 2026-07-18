@@ -12,28 +12,32 @@ describe('isCompleteChapter', () => {
   })
 
   it('rejects chapters that start after verse 1', () => {
-    expect(
-      isCompleteChapter([
-        { verse: 16, text: 'Karena begitu besar kasih Allah' }
-      ], true)
-    ).toBe(false)
+    expect(isCompleteChapter([{ verse: 16, text: 'Karena begitu besar kasih Allah' }], true)).toBe(
+      false
+    )
   })
 
   it('accepts non-contiguous numbering for translations with omitted verses', () => {
     expect(
-      isCompleteChapter([
-        { verse: 1, text: 'One' },
-        { verse: 3, text: 'Three' }
-      ], false)
+      isCompleteChapter(
+        [
+          { verse: 1, text: 'One' },
+          { verse: 3, text: 'Three' }
+        ],
+        false
+      )
     ).toBe(true)
   })
 
   it('rejects gaps for contiguous translations', () => {
     expect(
-      isCompleteChapter([
-        { verse: 1, text: 'One' },
-        { verse: 3, text: 'Three' }
-      ], true)
+      isCompleteChapter(
+        [
+          { verse: 1, text: 'One' },
+          { verse: 3, text: 'Three' }
+        ],
+        true
+      )
     ).toBe(false)
   })
 })

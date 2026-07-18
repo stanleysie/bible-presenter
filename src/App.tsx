@@ -52,55 +52,52 @@ export default function App(): JSX.Element {
     (translation) => translation.languageId === languageId
   )
 
-  const loadVerses = useCallback(
-    async (tId: string, bId: string, ch: number) => {
-      const requestId = ++loadRequestIdRef.current
-      setLoadingVerses(true)
-      setError(null)
-      try {
-        const result = await window.biblePresenter.getVerses(tId, bId, ch)
-        if (requestId !== loadRequestIdRef.current) return
+  const loadVerses = useCallback(async (tId: string, bId: string, ch: number) => {
+    const requestId = ++loadRequestIdRef.current
+    setLoadingVerses(true)
+    setError(null)
+    try {
+      const result = await window.biblePresenter.getVerses(tId, bId, ch)
+      if (requestId !== loadRequestIdRef.current) return
 
-        setVerses(result.verses)
-        if (result.verses.length > 0) {
-          const pending = pendingVerseRef.current
-          pendingVerseRef.current = null
-          if (pending !== null && result.verses.some((v) => v.verse === pending)) {
-            const selected = result.verses.find((v) => v.verse === pending)!
-            setSelectedVerse(selected.verse)
-            setPreview({
-              translationId: result.translationId,
-              translationAbbreviation: result.translationAbbreviation,
-              reference: `${selected.bookName} ${selected.chapter}:${selected.verse}`,
-              verses: [selected]
-            })
-          } else {
-            setSelectedVerse(null)
-            setPreview(null)
-          }
+      setVerses(result.verses)
+      if (result.verses.length > 0) {
+        const pending = pendingVerseRef.current
+        pendingVerseRef.current = null
+        if (pending !== null && result.verses.some((v) => v.verse === pending)) {
+          const selected = result.verses.find((v) => v.verse === pending)!
+          setSelectedVerse(selected.verse)
+          setPreview({
+            translationId: result.translationId,
+            translationAbbreviation: result.translationAbbreviation,
+            reference: `${selected.bookName} ${selected.chapter}:${selected.verse}`,
+            verses: [selected]
+          })
         } else {
           setSelectedVerse(null)
           setPreview(null)
         }
-      } catch (err) {
-        if (requestId !== loadRequestIdRef.current) return
-
-        setVerses([])
+      } else {
         setSelectedVerse(null)
         setPreview(null)
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Could not load verses. Check your internet connection.'
-        )
-      } finally {
-        if (requestId === loadRequestIdRef.current) {
-          setLoadingVerses(false)
-        }
       }
-    },
-    []
-  )
+    } catch (err) {
+      if (requestId !== loadRequestIdRef.current) return
+
+      setVerses([])
+      setSelectedVerse(null)
+      setPreview(null)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Could not load verses. Check your internet connection.'
+      )
+    } finally {
+      if (requestId === loadRequestIdRef.current) {
+        setLoadingVerses(false)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     async function init(): Promise<void> {
@@ -231,9 +228,7 @@ export default function App(): JSX.Element {
   }
 
   const selectTranslation = async (nextTranslationId: string): Promise<void> => {
-    const nextTranslation = translations.find(
-      (translation) => translation.id === nextTranslationId
-    )
+    const nextTranslation = translations.find((translation) => translation.id === nextTranslationId)
     if (!nextTranslation || nextTranslation.id === translationId) return
 
     loadRequestIdRef.current += 1
@@ -501,9 +496,7 @@ export default function App(): JSX.Element {
                   />
                 </div>
               ) : (
-                <div className="preview-empty">
-                  Select a verse or find a reference to preview
-                </div>
+                <div className="preview-empty">Select a verse or find a reference to preview</div>
               )}
             </div>
             <div className="preview-nav">
@@ -607,7 +600,8 @@ export default function App(): JSX.Element {
 
       <div className="shortcuts">
         <kbd>Esc</kbd> Hide &nbsp;
-        <kbd>←</kbd><kbd>→</kbd> Previous / next verse
+        <kbd>←</kbd>
+        <kbd>→</kbd> Previous / next verse
       </div>
     </div>
   )

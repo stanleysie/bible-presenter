@@ -1,13 +1,7 @@
-import {
-  BIBLE_BOOKS,
-  BOOK_NAME_TO_ID,
-  type Verse,
-  type VerseRange
-} from '../shared/types'
+import { BIBLE_BOOKS, BOOK_NAME_TO_ID, type Verse, type VerseRange } from '../shared/types'
 import { getChapterVerses } from './verse-service'
 
-const REFERENCE_REGEX =
-  /^(.+?)\s+(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?$/iu
+const REFERENCE_REGEX = /^(.+?)\s+(\d+)(?::(\d+)(?:\s*[-–]\s*(\d+))?)?$/iu
 
 export function normalizeReference(input: string): string {
   let normalized = input
@@ -73,13 +67,7 @@ export async function lookupReference(
 
   const { bookId, chapter, startVerse } = parsed
   const verseToShow = startVerse ?? 1
-  const verses = await getChapterVerses(
-    translationId,
-    bookId,
-    chapter,
-    verseToShow,
-    verseToShow
-  )
+  const verses = await getChapterVerses(translationId, bookId, chapter, verseToShow, verseToShow)
 
   if (verses.length === 0) return null
 

@@ -116,9 +116,7 @@ describe('formatReference', () => {
   })
 
   it('formats a verse range in one chapter', () => {
-    expect(
-      formatReference([verse({ verse: 9 }), verse({ verse: 11 })])
-    ).toBe('Roma 12:9-11')
+    expect(formatReference([verse({ verse: 9 }), verse({ verse: 11 })])).toBe('Roma 12:9-11')
   })
 
   it('formats a cross-chapter range', () => {

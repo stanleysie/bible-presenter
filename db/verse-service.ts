@@ -19,11 +19,7 @@ function hasFullChapterCache(translationId: string, verses: Verse[]): boolean {
  * Warm adjacent chapters in the background so next/prev navigation hits
  * SQLite (and the upstream in-memory cache) instead of a cold SABDA scrape.
  */
-function scheduleAdjacentPrefetch(
-  translationId: string,
-  bookId: string,
-  chapter: number
-): void {
+function scheduleAdjacentPrefetch(translationId: string, bookId: string, chapter: number): void {
   const chapterCount = getChapterCount(translationId, bookId)
   const neighbors = [chapter - 1, chapter + 1].filter(
     (value) => value >= 1 && value <= chapterCount

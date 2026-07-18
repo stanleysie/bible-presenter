@@ -15,8 +15,5 @@ export function getPreferredVerseFontSize(
   const byWidth = Math.floor(containerWidth / 12)
   const scaled = Math.min(byHeight, byWidth)
 
-  return Math.max(
-    minFontSize,
-    Math.min(maxFontSize, scaled || maxFontSize)
-  )
+  return Math.max(minFontSize, Math.min(maxFontSize, scaled || maxFontSize))
 }

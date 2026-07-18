@@ -103,8 +103,16 @@ describe('App', () => {
         }
       ]
     })
-    biblePresenter.showVerse.mockResolvedValue({ active: true, payload: null, theme: DEFAULT_THEME })
-    biblePresenter.clearOutput.mockResolvedValue({ active: false, payload: null, theme: DEFAULT_THEME })
+    biblePresenter.showVerse.mockResolvedValue({
+      active: true,
+      payload: null,
+      theme: DEFAULT_THEME
+    })
+    biblePresenter.clearOutput.mockResolvedValue({
+      active: false,
+      payload: null,
+      theme: DEFAULT_THEME
+    })
     biblePresenter.setOutputDisplay.mockResolvedValue({
       outputDisplayId: 1,
       defaultTranslationId: 'tb',

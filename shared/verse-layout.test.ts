@@ -14,23 +14,13 @@ describe('getPreferredVerseFontSize', () => {
 
   it('respects custom max font size for preview', () => {
     expect(
-      getPreferredVerseFontSize(
-        180,
-        320,
-        PREVIEW_MAX_VERSE_FONT_SIZE,
-        PREVIEW_MIN_VERSE_FONT_SIZE
-      )
+      getPreferredVerseFontSize(180, 320, PREVIEW_MAX_VERSE_FONT_SIZE, PREVIEW_MIN_VERSE_FONT_SIZE)
     ).toBeLessThanOrEqual(PREVIEW_MAX_VERSE_FONT_SIZE)
   })
 
   it('does not fall below preview minimum when capped', () => {
     expect(
-      getPreferredVerseFontSize(
-        40,
-        80,
-        PREVIEW_MAX_VERSE_FONT_SIZE,
-        PREVIEW_MIN_VERSE_FONT_SIZE
-      )
+      getPreferredVerseFontSize(40, 80, PREVIEW_MAX_VERSE_FONT_SIZE, PREVIEW_MIN_VERSE_FONT_SIZE)
     ).toBeGreaterThanOrEqual(PREVIEW_MIN_VERSE_FONT_SIZE)
   })
 

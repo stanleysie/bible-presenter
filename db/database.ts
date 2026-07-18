@@ -1,11 +1,7 @@
 import Database from 'better-sqlite3'
 import { join } from 'path'
 import { app } from 'electron'
-import {
-  TRANSLATIONS,
-  getLocalizedBibleBooks,
-  getTranslationConfig
-} from '../shared/types'
+import { TRANSLATIONS, getLocalizedBibleBooks, getTranslationConfig } from '../shared/types'
 import type { Book, Translation, Verse } from '../shared/types'
 
 let db: Database.Database | null = null
@@ -117,16 +113,18 @@ export function getTranslations(): Translation[] {
     .prepare('SELECT id, name, abbreviation, locale FROM translations ORDER BY name')
     .all() as Array<{ id: string; name: string; abbreviation: string; locale: string }>
 
-  return rows.map((row) => {
-    const config = getTranslationConfig(row.id)
-    if (!config) return null
-    return {
-      ...config,
-      name: row.name,
-      abbreviation: row.abbreviation,
-      locale: row.locale
-    }
-  }).filter((t): t is Translation => t !== null)
+  return rows
+    .map((row) => {
+      const config = getTranslationConfig(row.id)
+      if (!config) return null
+      return {
+        ...config,
+        name: row.name,
+        abbreviation: row.abbreviation,
+        locale: row.locale
+      }
+    })
+    .filter((t): t is Translation => t !== null)
 }
 
 export function getBooks(translationId: string): Book[] {
@@ -195,13 +193,11 @@ export function getVerses(
   }))
 }
 
-export function isChapterCached(
-  translationId: string,
-  bookId: string,
-  chapter: number
-): boolean {
+export function isChapterCached(translationId: string, bookId: string, chapter: number): boolean {
   const database = initDatabase()
-  const row = database.prepare(`
+  const row = database
+    .prepare(
+      `
     SELECT chapter_cache.verse_count AS expected_count, COUNT(verses.verse) AS actual_count
     FROM chapter_cache
     LEFT JOIN verses
@@ -212,9 +208,10 @@ export function isChapterCached(
       AND chapter_cache.book = ?
       AND chapter_cache.chapter = ?
     GROUP BY chapter_cache.verse_count
-  `).get(translationId, bookId, chapter) as
-    | { expected_count: number; actual_count: number }
-    | undefined
+  `
+    )
+    .get(translationId, bookId, chapter) as
+    { expected_count: number; actual_count: number } | undefined
 
   return Boolean(row && row.expected_count > 0 && row.expected_count === row.actual_count)
 }
